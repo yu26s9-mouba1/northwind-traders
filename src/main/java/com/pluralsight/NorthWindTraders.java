@@ -67,6 +67,7 @@ public class NorthWindTraders {
             System.out.println("What do you want to do?");
             System.out.println("1- Display All Products ");
             System.out.println("2- Display All Customers ");
+            System.out.println("3- Display All Categories ");
             System.out.println("0- Exit ");
             System.out.println("Enter your option: ");
             option = sc.nextInt();
@@ -78,6 +79,8 @@ public class NorthWindTraders {
                 case 2:
                     displayAllCustomers();
                     break;
+                case 3:
+                    displayAllCategories();
                 case 0:
                     System.out.println("Goodbye!");
                     break;
@@ -164,6 +167,71 @@ public class NorthWindTraders {
 
 
         }
+
+    }
+
+    public void displayAllCategories() throws SQLException {
+        Scanner sc = new Scanner(System.in);
+
+        String categoriesQuery = """
+                select CategoryID, CategoryName
+                from Categories
+                order by CategoryID
+        """;
+
+
+        String productsByCategoryQuery = """
+                select CategoryID, CategoryName, UnitPrice, UnitsInStock from Products
+                where CategoryID = ?
+                order by productName
+                """;
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setUrl("jdbc:mysql://localhost:3306/northwind");
+        dataSource.setUsername("testuser2");
+        dataSource.setPassword("Password123");
+        try(
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(categoriesQuery);
+                ResultSet categoriesResult = preparedStatement.executeQuery();
+
+        ){
+
+            System.out.printf("%-5s %-25s%n", "ID", "CategoryName");
+            System.out.println("-------------------------------");
+            while (categoriesResult.next()) {
+                int categoryID = categoriesResult.getInt("CategoryID");
+                String categoryName = categoriesResult.getString("CategoryName");
+
+                System.out.printf("%-5s %-25s%n", categoryID, categoryName);
+            }
+        }
+
+        System.out.println("\nEnter Category ID: ");
+        int categoryID = sc.nextInt();
+
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(productsByCategoryQuery)
+        ) {
+            preparedStatement.setInt(1, categoryID);
+
+            try (ResultSet productsResult = preparedStatement.executeQuery()) {
+                System.out.printf("%-5s %-35s %-35s%n %-10s", "ID", "Product Name", "Price", "Stock");
+                System.out.println("------------------------");
+
+                while (productsResult.next()) {
+                    int productID = productsResult.getInt("ProductID");
+                    String productName = productsResult.getString("ProductName");
+                    double productPrice = productsResult.getDouble("ProductPrice");
+                    double productsInStock = productsResult.getDouble("ProductsInStock");
+
+                    System.out.printf("%-5d %-35s %-10.2f %-10d%n", productID, productName, productPrice, productsInStock);
+                }
+            }
+
+
+        }
+
 
     }
 
